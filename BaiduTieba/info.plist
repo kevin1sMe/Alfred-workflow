@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.tie.bar</string>
+	<key>category</key>
+	<string>Internet</string>
+	<key>connections</key>
+	<dict>
+		<key>D2AE57B8-DAD8-4B6D-B681-24A5EC4EAF98</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>87577F26-5441-4965-8A85-56DB940026A1</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>@mmyjona @kevinlin</string>
+	<key>description</key>
+	<string>百度贴吧，新增点击回复数及由suggest匹配英文输入</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>Tieba</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>browser</key>
+				<string></string>
+				<key>spaces</key>
+				<string></string>
+				<key>url</key>
+				<string>{query}</string>
+				<key>utf8</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.openurl</string>
+			<key>uid</key>
+			<string>87577F26-5441-4965-8A85-56DB940026A1</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>63</integer>
+				<key>keyword</key>
+				<string>tb</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<false/>
+				<key>queuedelaymode</key>
+				<integer>1</integer>
+				<key>queuemode</key>
+				<integer>2</integer>
+				<key>runningsubtext</key>
+				<string>载入中，请稍等… 英文贴吧在前面加个@</string>
+				<key>script</key>
+				<string>#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from __future__ import division, absolute_import
+
+import alp
+import re
+import urllib
+import urllib2
+import ast
+import json
+
+real_query='{query}'
+#real_query='hyrz'
+#print real_query
+
+#判断是否有中文 
+def CheckContainChinese(check_str):
+    for ch in check_str.decode('utf-8'):
+    	if u'\u4e00' &lt;= ch &lt;= u'\u9fff':
+        	return True
+    return False
+
+#获得搜索引擎推荐的中文
+def GetSuggestWord(in_word):
+    #如果非中文才去检索
+    if CheckContainChinese(in_word):
+    	#print "contain chinese"
+    	return in_word
+
+    if in_word[0] == '@' :
+	return in_word[1:]
+    suggest_url="http://api.bing.com/osjson.aspx?query=" + urllib.quote(in_word)
+    #print suggest_url
+    result = urllib2.urlopen(suggest_url)
+    #result_list = ast.literal_eval(unicode(result.read(), "utf-8"))
+    result_list = json.loads(urllib.unquote(result.read()))
+    #print result_list
+    return result_list[1][0]
+
+result_list = None
+
+target_word=GetSuggestWord(real_query)
+url = "http://wapp.baidu.com/f?kw=" + target_word
+#print url
+r = alp.Request(url, payload=None, post=False).souper()
+
+
+result = [u'&lt;?xml version="1.0"?&gt;', u'&lt;items&gt;']
+
+i = 0
+for link in r.find_all("div", "i"):
+    #print "===link===",link
+    title = link.find("a").string.encode('utf-8')
+    title = re.sub(r"^\d*\. *", "", title)
+    #print title
+
+    id_ = re.search("kz\=(\d*)\&amp;", link.find("a")["href"]).group(1)
+    #print link.find("p")
+    click_num = re.search("点(\d*)", link.find("p").string.encode('utf-8')).group(1)
+    reply_num = re.search("回(\d*)", link.find("p").string.encode('utf-8')).group(1)
+    #click_num = re.search("点(\d*)", "&lt;p&gt;点173 回26 羁绊阿飞 3-8&lt;/p&gt;").group(1)
+    #print "click_num:" + click_num + " reply_num:" + reply_num
+    aurl = u"http://tieba.baidu.com/p/" + id_
+    result.append(u'&lt;item uid="baidusearch' + str(i) + u'" arg="' + aurl + u'"&gt;')
+    result.append(u'&lt;title&gt;' + title.decode("utf8") + u'&lt;/title&gt;')
+    result.append(u'&lt;subtitle&gt; 点击' + click_num + u' 回复' + reply_num + u'&lt;/subtitle&gt;')
+    result.append(u'&lt;icon&gt;icon.png&lt;/icon&gt;')
+    result.append(u'&lt;/item&gt;')
+    i += 1
+
+
+result.append(u'&lt;/items&gt;')
+xml = ''.join(result)
+
+print xml.encode("utf8")
+print url
+</string>
+				<key>scriptargtype</key>
+				<integer>0</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>空格后输入吧名, 载入后↑↓箭头选贴, 回车直达</string>
+				<key>title</key>
+				<string>浏览贴吧最新贴</string>
+				<key>type</key>
+				<integer>3</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>D2AE57B8-DAD8-4B6D-B681-24A5EC4EAF98</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>87577F26-5441-4965-8A85-56DB940026A1</key>
+		<dict>
+			<key>xpos</key>
+			<integer>500</integer>
+			<key>ypos</key>
+			<real>10</real>
+		</dict>
+		<key>D2AE57B8-DAD8-4B6D-B681-24A5EC4EAF98</key>
+		<dict>
+			<key>xpos</key>
+			<integer>300</integer>
+			<key>ypos</key>
+			<real>140</real>
+		</dict>
+	</dict>
+	<key>webaddress</key>
+	<string></string>
+</dict>
+</plist>
