@@ -1,7 +1,6 @@
 #!/bin/bash
-#by kevinlin @2017-11-2 16:48
 
-is_second=`echo {query} | egrep "^[0-9]{9,10}$"`
+echo {query} | egrep "^[0-9]{9,10}$"
 if [ $? -eq 0 ]
 then
     result=`date -r "{query}" "+%Y-%m-%d %H:%M:%S"`
