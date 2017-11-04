@@ -9,9 +9,7 @@ import urllib2
 import ast
 import json
 
-#real_query='{query}'
-real_query='hyrz'
-#print real_query
+real_query='{query}'
 
 #判断是否有中文 
 def CheckContainChinese(check_str):
@@ -24,24 +22,20 @@ def CheckContainChinese(check_str):
 def GetSuggestWord(in_word):
     #如果非中文才去检索
     if CheckContainChinese(in_word):
-    	#print "contain chinese"
     	return in_word
 
     if in_word[0] == '@' :
 	return in_word[1:]
     suggest_url="http://api.bing.com/osjson.aspx?query=" + urllib.quote(in_word)
-    #print suggest_url
     result = urllib2.urlopen(suggest_url)
     #result_list = ast.literal_eval(unicode(result.read(), "utf-8"))
     result_list = json.loads(urllib.unquote(result.read()))
-    #print result_list
     return result_list[1][0]
 
 result_list = None
 
 target_word=GetSuggestWord(real_query)
 url = "http://wapp.baidu.com/f?kw=" + target_word
-#print url
 r = alp.Request(url, payload=None, post=False).souper()
 
 
@@ -49,17 +43,12 @@ result = [u'<?xml version="1.0"?>', u'<items>']
 
 i = 0
 for link in r.find_all("div", "i"):
-    #print "===link===",link
     title = link.find("a").string.encode('utf-8')
     title = re.sub(r"^\d*\. *", "", title)
-    #print title
 
     id_ = re.search("kz\=(\d*)\&", link.find("a")["href"]).group(1)
-    #print link.find("p")
     click_num = re.search("点(\d*)", link.find("p").string.encode('utf-8')).group(1)
     reply_num = re.search("回(\d*)", link.find("p").string.encode('utf-8')).group(1)
-    #click_num = re.search("点(\d*)", "<p>点173 回26 羁绊阿飞 3-8</p>").group(1)
-    #print "click_num:" + click_num + " reply_num:" + reply_num
     aurl = u"http://tieba.baidu.com/p/" + id_
     result.append(u'<item uid="baidusearch' + str(i) + u'" arg="' + aurl + u'">')
     result.append(u'<title>' + title.decode("utf8") + u'</title>')
